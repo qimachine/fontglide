@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FontGlide — Font Transition Demo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20211f;
+      --muted: #666b64;
+      --paper: #f7f6f1;
+      --panel: #ffffff;
+      --line: #dedfd7;
+      --accent: #c65332;
+      --accent-dark: #9e3d23;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 56px; }
+    header { margin-bottom: 26px; }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 800; }
+    h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.05; letter-spacing: -.045em; margin: 8px 0 12px; }
+    header p { color: var(--muted); max-width: 690px; margin: 0; }
+    .layout { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .panel, .sample { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; }
+    .panel { padding: 20px; }
+    .panel h2 { font-size: 17px; margin: 0 0 18px; }
+    .control { margin: 0 0 20px; }
+    .control label.title { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    output { color: var(--accent-dark); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .help { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+    .toggle-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; margin: 0 0 16px; }
+    .toggle-row input { margin-top: 4px; accent-color: var(--accent); }
+    .toggle-row strong { display: block; }
+    .buttons { display: grid; grid-template-columns: 1fr; gap: 9px; margin-top: 18px; }
+    button { border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font: inherit; font-weight: 750; cursor: pointer; background: white; color: var(--ink); }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button:hover { filter: brightness(.97); }
+    button:focus-visible, input:focus-visible { outline: 3px solid #e7a18c; outline-offset: 2px; }
+    .status { border-radius: 10px; padding: 10px 12px; background: #f1f0e9; color: #4e524b; font-size: 12px; min-height: 40px; overflow-wrap: anywhere; }
+    .status[data-state="ok"] { background: #eaf4e9; color: #285d2b; }
+    .status[data-state="error"] { background: #fff0e9; color: #8b321b; }
+    .sample { overflow: hidden; }
+    .sample-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 14px 20px; color: var(--muted); font-size: 12px; }
+    .pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 9px; color: var(--ink); white-space: nowrap; }
+    .sample-content { padding: clamp(24px, 5vw, 54px); }
+    .sample-content .kicker { color: var(--accent); font: 800 11px/1.2 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .16em; }
+    .sample-content h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 4.2vw, 54px); line-height: 1.04; letter-spacing: -.035em; margin: 16px 0 20px; font-weight: 700; }
+    .sample-content p { font-family: Georgia, "Times New Roman", serif; font-size: 19px; line-height: 1.65; margin: 0 0 18px; }
+    .sample-content .small { font: 13px/1.6 system-ui, sans-serif; color: var(--muted); margin-top: 28px; }
+    .sample-content blockquote { margin: 28px 0; padding-left: 18px; border-left: 3px solid var(--accent); font: italic 21px/1.45 Georgia, serif; }
+    .sample-content a { color: var(--accent-dark); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .footnote { margin-top: 18px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+      .shell { padding-top: 24px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="eyebrow">Typography lab · Interactive demo</div>
+      <h1>Make the font swap feel intentional.</h1>
+      <p>Compare a normal web-font swap with a text-only crossfade. Delay the font request to simulate a slow connection, or bypass the font cache to force a fresh font-file request.</p>
+    </header>
+
+    <div class="layout">
+      <aside class="panel" aria-label="Demo controls">
+        <h2>Test controls</h2>
+
+        <div class="control">
+          <label class="title" for="delay">Delay before loading font <output id="delayValue">1500 ms</output></label>
+          <input id="delay" type="range" min="0" max="8000" step="250" value="1500">
+          <p class="help">The fallback font stays visible during this delay.</p>
+        </div>
+
+        <div class="control">
+          <label class="title" for="duration">Crossfade duration <output id="durationValue">280 ms</output></label>
+          <input id="duration" type="range" min="80" max="1000" step="20" value="280">
+          <p class="help">How long the old and new fonts cross-dissolve.</p>
+        </div>
+
+        <label class="toggle-row">
+          <input id="fadeEnabled" type="checkbox" checked>
+          <span><strong>Enable crossfade</strong>Crossfade text only; backgrounds, images, and borders stay put.</span>
+        </label>
+
+        <label class="toggle-row">
+          <input id="bypassCache" type="checkbox" checked>
+          <span><strong>Bypass font cache</strong>Add a unique query to the font-file URL for the next run.</span>
+        </label>
+
+        <div class="buttons">
+          <button class="primary" id="run">Reload demo</button>
+          <button id="clearCache">Clear font cache &amp; reload</button>
+        </div>
+        <p class="help">Browsers don't let a webpage erase the browser-wide cache. The button instead cache-busts the font URL, forcing a fresh font resource request.</p>
+        <div id="status" class="status" role="status" aria-live="polite">Ready. Choose settings and reload the demo.</div>
+      </aside>
+
+      <section class="sample" aria-label="Font swap preview">
+        <div class="sample-top">
+          <span>LIVE PREVIEW</span>
+          <span class="pill" id="fontState">Fallback font</span>
+        </div>
+        <article class="sample-content" id="preview">
+          <div class="kicker">Design notes / 01</div>
+          <h2>Good typography should arrive without a jolt.</h2>
+          <p>At first, this paragraph is rendered in a dependable system serif. When the custom typeface is ready, the letters change shape. With the crossfade enabled, only the text gently dissolves from one font into the other.</p>
+          <p>Notice the details: the rhythm of the sentence, the shape of each letter, and the way the words sit together. This is sample copy for comparing the transition, not a promise that every layout will remain fixed.</p>
+          <blockquote>“The smallest detail can change the feeling of an entire page.”</blockquote>
+          <p>Try a longer delay to inspect the fallback font first. Then disable the crossfade and reload to see the abrupt swap. Re-enable it to compare the two behaviors under the same conditions.</p>
+          <p class="small">The preview intentionally includes several text styles. Controls and non-text decoration are not part of the fade.</p>
+        </article>
+      </section>
+    </div>
+    <p class="footnote">Demo font: Lobster from Google Fonts. Requires an internet connection for the font stylesheet and font file. If the request fails, the preview remains readable in its fallback font.</p>
+  </main>
+
+  <script type="module">
+    // In production, import from your CDN instead:
+    //   import { glide } from "https://cdn.example.com/fontglide.js";
+    const FONT_CSS = "https://fonts.googleapis.com/css2?family=Lobster&display=swap";
+
+    const $ = (id) => document.getElementById(id);
+    const delayInput = $("delay");
+    const durationInput = $("duration");
+    const fadeInput = $("fadeEnabled");
+    const bypassInput = $("bypassCache");
+    const status = $("status");
+    const fontState = $("fontState");
+    const preview = $("preview");
+
+    const updateLabels = () => {
+      $("delayValue").textContent = `${delayInput.value} ms`;
+      $("durationValue").textContent = `${durationInput.value} ms`;
+    };
+    delayInput.addEventListener("input", updateLabels);
+    durationInput.addEventListener("input", updateLabels);
+    updateLabels();
+
+    function setStatus(message, state = "") {
+      status.textContent = message;
+      status.dataset.state = state;
+    }
+
+    // Loaded dynamically so a failure (e.g. opening this file via file://) is reported in the UI.
+    let glide;
+    try {
+      ({ glide } = await import("./fontglide.min.js"));
+    } catch (err) {
+      console.error(err);
+      setStatus("Couldn't load fontglide.js. Browsers block ES modules on file:// URLs, so serve this folder over http (for example: python3 -m http.server).", "error");
+    }
+
+    let job = null;
+
+    function runDemo(forceBypass = false) {
+      if (!glide) return;
+      if (job) job.revert(); // restores the page to its pre-FontGlide state
+
+      const duration = Number(durationInput.value);
+      const bypassCache = forceBypass || bypassInput.checked;
+      fontState.textContent = "Fallback font";
+      setStatus("Preview reset. Waiting before requesting the custom font…");
+
+      job = glide({
+        fonts: [FONT_CSS],
+        root: preview,
+        delay: Number(delayInput.value),
+        duration,
+        fade: fadeInput.checked,
+        bypassCache,
+        onPhase(phase, info) {
+          if (phase === "loading") {
+            setStatus(bypassCache ? "Requesting font with cache-busting enabled…" : "Requesting custom font…");
+          } else if (phase === "fading") {
+            fontState.textContent = "Custom font · crossfading";
+          } else if (phase === "done" && info.instant) {
+            fontState.textContent = "Custom font · no fade";
+            setStatus("Custom font applied immediately. Crossfade is disabled.", "ok");
+          } else if (phase === "done") {
+            fontState.textContent = "Custom font · crossfaded";
+            setStatus(`Font applied with crossfade (${duration} ms).`, "ok");
+          } else if (phase === "error") {
+            fontState.textContent = "Fallback font";
+            setStatus(`${info.error.message} The fallback font remains visible.`, "error");
+          }
+        },
+      });
+    }
+
+    $("run").addEventListener("click", () => runDemo(false));
+    $("clearCache").addEventListener("click", () => {
+      bypassInput.checked = true;
+      runDemo(true);
+    });
+
+    // Start automatically so the first page load demonstrates the default behavior.
+    runDemo(false);
+  </script>
+</body>
+</html>
